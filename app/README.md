@@ -13,9 +13,10 @@ from ChatGPT or the MCP Inspector.
 ## Installation
 
 ```bash
-python -m venv .venv
+uv init
+uv sync
 source .venv/bin/activate
-pip install -r requirements.txt
+uv add -r requirements.txt
 ```
 
 > The requirements pin the official `mcp` distribution with its FastAPI extra. If
