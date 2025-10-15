@@ -26,7 +26,7 @@ it first to avoid import conflicts.
 ## Run the server
 
 ```bash
-python main.py
+uv run main.py
 ```
 
 This boots a FastAPI app with uvicorn on `http://127.0.0.1:8000` (equivalently
