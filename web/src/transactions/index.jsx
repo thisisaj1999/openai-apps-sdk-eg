@@ -1,6 +1,6 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-import markers from "../pizzaz/markers.json";
+import markers from "../map/markers.json";
 import { PlusCircle, Star } from "lucide-react";
 
 function App() {
@@ -108,4 +108,4 @@ function App() {
   );
 }
 
-createRoot(document.getElementById("pizzaz-list-root")).render(<App />);
+createRoot(document.getElementById("transactions-root")).render(<App />);

@@ -2,14 +2,11 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import useEmblaCarousel from "embla-carousel-react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import albumsData from "./albums.json";
-import { useMaxHeight } from "../use-max-height";
-import { useOpenAiGlobal } from "../use-openai-global";
-import FullscreenViewer from "./FullscreenViewer";
-import AlbumCard from "./AlbumCard";
+import markers from "../map/markers.json";
+import PlaceCard from "./PlaceCard";
 
-function AlbumsCarousel({ onSelect }) {
-  const albums = albumsData?.albums || [];
+function App() {
+  const places = markers?.places || [];
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: "center",
     loop: false,
@@ -36,14 +33,15 @@ function AlbumsCarousel({ onSelect }) {
   }, [emblaApi]);
 
   return (
-    <div className="antialiased relative w-full text-black py-5 select-none">
-      <div className="overflow-hidden max-sm:mx-5" ref={emblaRef}>
-        <div className="flex gap-5 items-stretch">
-          {albums.map((album) => (
-            <AlbumCard key={album.id} album={album} onSelect={onSelect} />
+    <div className="antialiased relative w-full text-black py-5 bg-white">
+      <div className="overflow-hidden" ref={emblaRef}>
+        <div className="flex gap-4 max-sm:mx-5 items-stretch">
+          {places.map((place) => (
+            <PlaceCard key={place.id} place={place} />
           ))}
         </div>
       </div>
+      {/* Edge gradients */}
       <div
         aria-hidden
         className={
@@ -110,35 +108,4 @@ function AlbumsCarousel({ onSelect }) {
   );
 }
 
-function App() {
-  const displayMode = useOpenAiGlobal("displayMode");
-  const [selectedAlbum, setSelectedAlbum] = React.useState(null);
-  const maxHeight = useMaxHeight() ?? undefined;
-
-  const handleSelectAlbum = (album) => {
-    setSelectedAlbum(album);
-    if (window?.webplus?.requestDisplayMode) {
-      window.webplus.requestDisplayMode({ mode: "fullscreen" });
-    }
-  };
-
-  return (
-    <div
-      className="relative antialiased w-full"
-      style={{
-        maxHeight,
-        height: displayMode === "fullscreen" ? maxHeight : undefined,
-      }}
-    >
-      {displayMode !== "fullscreen" && (
-        <AlbumsCarousel onSelect={handleSelectAlbum} />
-      )}
-
-      {displayMode === "fullscreen" && selectedAlbum && (
-        <FullscreenViewer album={selectedAlbum} />
-      )}
-    </div>
-  );
-}
-
-createRoot(document.getElementById("pizzaz-albums-root")).render(<App />);
+createRoot(document.getElementById("listings-root")).render(<App />);
