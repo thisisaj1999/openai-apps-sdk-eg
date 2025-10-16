@@ -1,6 +1,10 @@
+import { FormWidget } from "./components/FormWidget"
+
 const App = () => {
   return (
-    <div>App</div>
+    <div className="min-h-screen bg-background py-8">
+      <FormWidget />
+    </div>
   )
 }
 
