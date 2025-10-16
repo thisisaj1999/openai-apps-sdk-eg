@@ -1,9 +1,9 @@
-import { FormWidget } from "./components/FormWidget"
+import { TransactionWidget } from "./components/TransactionWidget"
 
 const App = () => {
   return (
     <div className="min-h-screen bg-background py-8">
-      <FormWidget />
+      <TransactionWidget />
     </div>
   )
 }

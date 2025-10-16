@@ -1,15 +1,23 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { format } from "date-fns"
-import { Calendar as CalendarIcon, Check, ChevronsUpDown, Search } from "lucide-react"
+import { Calendar as CalendarIcon, Check, ChevronsUpDown, Search, Download } from "lucide-react"
 import * as z from "zod"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import {
   Command,
   CommandEmpty,
@@ -21,7 +29,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -80,7 +87,7 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>
 
-export function FormWidget() {
+export function TransactionWidget() {
   const [openLocation, setOpenLocation] = useState(false)
   const [openStartDate, setOpenStartDate] = useState(false)
   const [openEndDate, setOpenEndDate] = useState(false)
@@ -88,6 +95,122 @@ export function FormWidget() {
   const [displayedLocations, setDisplayedLocations] = useState<LocationItem[]>([])
   const [loadingLocations, setLoadingLocations] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
+  
+  // New state for table data
+  const [tableData, setTableData] = useState<any[]>([])
+  const [isLoadingData, setIsLoadingData] = useState(false)
+  const [currentTransactionType, setCurrentTransactionType] = useState<"sale" | "rent" | null>(null)
+
+  // Helper function to format price in AED
+  const formatPrice = (price: string | number): string => {
+    if (!price || price === 'N/A') return 'N/A'
+    const numPrice = typeof price === 'string' ? parseFloat(price) : price
+    if (isNaN(numPrice)) return 'N/A'
+    return `AED ${numPrice.toLocaleString()}`
+  }
+
+  // Helper function to format sold by status
+  const formatSoldBy = (isFirst: string): string => {
+    if (!isFirst || isFirst === 'N/A') return 'N/A'
+    return isFirst.toUpperCase() === 'Y' ? 'Developer' : 'Individual'
+  }
+
+  // Helper function to format rental price
+  const formatRentalPrice = (price: string | number): string => {
+    if (!price || price === 'N/A') return 'N/A'
+    const numPrice = typeof price === 'string' ? parseFloat(price) : price
+    if (isNaN(numPrice)) return 'N/A'
+    return `AED ${numPrice.toLocaleString()}`
+  }
+
+  // Helper function to format duration for rental
+  const formatDuration = (startDate: string, endDate: string): string => {
+    if (!startDate || !endDate || startDate === 'N/A' || endDate === 'N/A') {
+      return 'N/A'
+    }
+
+    try {
+      // Parse DD-MM-YYYY format
+      const parseDate = (dateStr: string): Date => {
+        const parts = dateStr.split('-')
+        if (parts.length !== 3) throw new Error('Invalid date format')
+        
+        const day = parseInt(parts[0])
+        const month = parseInt(parts[1]) - 1 // Month is 0-indexed
+        const year = parseInt(parts[2])
+        
+        return new Date(year, month, day)
+      }
+
+      const start = parseDate(startDate)
+      const end = parseDate(endDate)
+      
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        return 'N/A'
+      }
+
+      // Format as DD-MM(short)-YYYY
+      const formatDisplayDate = (date: Date): string => {
+        const day = date.getDate().toString().padStart(2, '0')
+        const month = format(date, 'MMM') // Short month name
+        const year = date.getFullYear()
+        return `${day}-${month}-${year}`
+      }
+
+      const formattedStart = formatDisplayDate(start)
+      const formattedEnd = formatDisplayDate(end)
+      
+      return `${formattedStart} - ${formattedEnd}`
+    } catch (error) {
+      console.log('Error formatting duration:', error, { startDate, endDate })
+      return 'N/A'
+    }
+  }
+
+  // Helper function to export data to CSV
+  const exportToCSV = () => {
+    if (!tableData.length) return
+
+    let csvContent = ''
+    let headers = []
+    let rows = []
+
+    if (currentTransactionType === 'sale') {
+      headers = ['Location', 'Price', 'Price/SQFT', 'Type', 'Sold By']
+      rows = tableData.map(item => [
+        item.project_name || 'N/A',
+        formatPrice(item.total_worth).replace('AED ', ''), // Remove AED prefix for CSV
+        formatPrice(item.sqft_price).replace('AED ', ''),
+        item.cat || 'N/A',
+        formatSoldBy(item.is_first)
+      ])
+    } else {
+      headers = ['Location', 'Rental (AED)', 'Type', 'Duration']
+      rows = tableData.map(item => [
+        item.path_name || 'N/A',
+        formatRentalPrice(item.total_price).replace('AED ', ''), // Remove AED prefix for CSV
+        item.category || 'N/A',
+        formatDuration(item.start_date, item.end_date)
+      ])
+    }
+
+    // Create CSV content
+    csvContent = headers.join(',') + '\n'
+    rows.forEach(row => {
+      csvContent += row.map(cell => `"${cell}"`).join(',') + '\n'
+    })
+
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', `${currentTransactionType}_transactions_${format(new Date(), 'yyyy-MM-dd')}.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -155,23 +278,56 @@ export function FormWidget() {
     }
   }
 
-  function onSubmit(data: FormData) {
+  async function onSubmit(data: FormData) {
     console.log("Form submitted with full data:", data)
     console.log("Full location object:", data.location)
     
-    // The data.location contains the complete location object with all properties:
-    // - dv (display value)
-    // - rv (reference value) 
-    // - id (unique identifier)
-    // - flag (type: A=Area, P=Project, B=Building)
-    // - is_featured (Y/N)
-    // - seq (sequence number)
+    // Format dates for API (MM-DD-YYYY format)
+    const date_fr = format(data.startDate, "MM-dd-yyyy")
+    const date_to = format(data.endDate, "MM-dd-yyyy")
+    const location_id = data.location.id
+    const rent_or_sale = data.type
     
-    alert(`Form submitted successfully!\n\nLocation: ${data.location.dv}\nLocation ID: ${data.location.id}\nLocation Type: ${data.location.flag}\nProperty Type: ${data.type}\nStart: ${format(data.startDate, "PPP")}\nEnd: ${format(data.endDate, "PPP")}`)
+    let url: string
+    
+    if (rent_or_sale === "sale") {
+      url = `https://fam-crm.com/ords/property/dxb/TransV7/ALL/ALL/ALL/${location_id}/${date_fr}/${date_to}/CREATED/N/20/0/ALL/ALL/ALL/ALL/ALL/ALL/ALL/ALL/ALL/ALL/ALL/ALL`
+    } else {
+      url = `https://fam-crm.com/ords/property/dxb/DLDRentalsV3/ALL/${location_id}/${date_fr}/${date_to}/CREATED/ALL/ALL/20/0`
+    }
+    
+    console.log("API URL:", url)
+    
+    try {
+      console.log("Making API call...")
+      
+      // Set loading state and transaction type
+      setIsLoadingData(true)
+      setCurrentTransactionType(rent_or_sale)
+      
+      const response = await fetch(url)
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      
+      const apiData = await response.json()
+      console.log("API Response:", apiData)
+      
+      // Set the table data
+      setTableData(apiData.items || apiData || [])
+      
+    } catch (error) {
+      console.error("Error fetching data from API:", error)
+      setTableData([]) // Set empty array on error
+    } finally {
+      // Stop loading
+      setIsLoadingData(false)
+    }
   }
 
   return (
-    <div className="w-full max-w-2xl mx-auto p-6 space-y-6">
+    <div className="w-full max-w-7xl mx-auto p-6 space-y-6">
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Search Transactions</h2>
         {/* <p className="text-muted-foreground">
@@ -417,6 +573,89 @@ export function FormWidget() {
           </Button>
         </form>
       </Form>
+
+      {/* Results Table */}
+      {isLoadingData && (
+        <div className="w-full p-6 text-center">
+          <div className="animate-pulse">Loading transaction data...</div>
+        </div>
+      )}
+
+      {!isLoadingData && tableData.length > 0 && currentTransactionType && (
+        <div className="w-full space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-semibold">
+              {currentTransactionType === "sale" ? "Sale Transactions" : "Rental Transactions"}
+            </h3>
+            <Button 
+              onClick={exportToCSV}
+              variant="outline" 
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Export CSV
+            </Button>
+          </div>
+          
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {currentTransactionType === "sale" ? (
+                  <>
+                    <TableHead>Location</TableHead>
+                    <TableHead>Price</TableHead>
+                    <TableHead>Price/SQFT</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Sold By</TableHead>
+                  </>
+                ) : (
+                  <>
+                    <TableHead>Location</TableHead>
+                    <TableHead>Rental (AED)</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Duration</TableHead>
+                  </>
+                )}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {tableData.map((item, index) => (
+                <TableRow key={index}>
+                  {currentTransactionType === "sale" ? (
+                    <>
+                      <TableCell>{item.project_name || 'N/A'}</TableCell>
+                      <TableCell>{formatPrice(item.total_worth)}</TableCell>
+                      <TableCell>{formatPrice(item.sqft_price)}</TableCell>
+                      <TableCell>{item.cat || 'N/A'}</TableCell>
+                      <TableCell>{formatSoldBy(item.is_first)}</TableCell>
+                    </>
+                  ) : (
+                    <>
+                      <TableCell>{item.path_name || 'N/A'}</TableCell>
+                      <TableCell>{formatRentalPrice(item.total_price)}</TableCell>
+                      <TableCell>{item.category || 'N/A'}</TableCell>
+                      <TableCell>
+                        {formatDuration(item.start_date, item.end_date)}
+                      </TableCell>
+                    </>
+                  )}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          
+          <div className="text-sm text-gray-600">
+            Total results: {tableData.length}
+          </div>
+        </div>
+      )}
+
+      {!isLoadingData && tableData.length === 0 && currentTransactionType && (
+        <div className="w-full p-6 text-center text-gray-500">
+          No transactions found for the selected criteria.
+        </div>
+      )}
     </div>
   )
 }
