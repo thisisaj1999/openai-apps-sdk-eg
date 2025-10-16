@@ -19,7 +19,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 
 @dataclass(frozen=True)
-class DXBMapWidget:
+class ToDoWidget:
     identifier: str
     title: str
     template_uri: str
@@ -29,19 +29,19 @@ class DXBMapWidget:
     response_text: str
 
 
-widgets: List[DXBMapWidget] = [
-    DXBMapWidget(
-        identifier="DXBMap-widget",
-        title="Show DXB Investment Map",
-        template_uri="ui://widget/dxb.html",
-        invoking="Fetch map data",
-        invoked="Here you go",
+widgets: List[ToDoWidget] = [
+    ToDoWidget(
+        identifier="todo-widget",
+        title="Show Todo",
+        template_uri="ui://widget/todo.html",
+        invoking="Hand-tossing a todo list",
+        invoked="Served a todo list",
         html=(
-            "<div id=\"root\"></div>\n"
-            "<link rel=\"stylesheet\" href=\"https://gist.github.com/thisisaj1999/18115cf4838f09ac7c203bafda30cc0e.js\">\n"
-            "<script type=\"module\" src=\"https://gist.github.com/thisisaj1999/be93454d641126c3dd4f047130b0273b.js\"></script>"
+            "<div id=\"todo-root\"></div>\n"
+            "<link rel=\"stylesheet\" href=\"http://localhost:4444/todo.css\">\n"
+            "<script type=\"module\" src=\"http://localhost:4444/todo.js\"></script>"
         ),
-        response_text="Rendered the map!",
+        response_text="Rendered a Todo!",
     )
 ]
 
@@ -49,16 +49,16 @@ widgets: List[DXBMapWidget] = [
 MIME_TYPE = "text/html+skybridge"
 
 
-WIDGETS_BY_ID: Dict[str, DXBMapWidget] = {widget.identifier: widget for widget in widgets}
-WIDGETS_BY_URI: Dict[str, DXBMapWidget] = {widget.template_uri: widget for widget in widgets}
+WIDGETS_BY_ID: Dict[str, ToDoWidget] = {widget.identifier: widget for widget in widgets}
+WIDGETS_BY_URI: Dict[str, ToDoWidget] = {widget.template_uri: widget for widget in widgets}
 
 
-class DXBMapInput(BaseModel):
-    """Schema for DXB Map tools."""
+class TodoInput(BaseModel):
+    """Schema for todo tools."""
 
-    dxbMap_options: str = Field(
+    todo_options: str = Field(
         ...,
-        alias="dxbmapOptions",
+        alias="todoOptions",
         description="Options to mention when rendering the widget.",
     )
 
@@ -66,7 +66,7 @@ class DXBMapInput(BaseModel):
 
 
 mcp = FastMCP(
-    name="dxbmap-python",
+    name="todo-python",
     stateless_http=True,
 )
 
@@ -74,21 +74,21 @@ mcp = FastMCP(
 TOOL_INPUT_SCHEMA: Dict[str, Any] = {
     "type": "object",
     "properties": {
-        "dxbmapOptions": {
+        "todoOptions": {
             "type": "string",
             "description": "Options to mention when rendering the widget.",
         }
     },
-    "required": ["dxbmapOptions"],
+    "required": ["todoOptions"],
     "additionalProperties": False,
 }
 
 
-def _resource_description(widget: DXBMapWidget) -> str:
+def _resource_description(widget: ToDoWidget) -> str:
     return f"{widget.title} widget markup"
 
 
-def _tool_meta(widget: DXBMapWidget) -> Dict[str, Any]:
+def _tool_meta(widget: ToDoWidget) -> Dict[str, Any]:
     return {
         "openai/outputTemplate": widget.template_uri,
         "openai/toolInvocation/invoking": widget.invoking,
@@ -103,7 +103,7 @@ def _tool_meta(widget: DXBMapWidget) -> Dict[str, Any]:
     }
 
 
-def _embedded_widget_resource(widget: DXBMapWidget) -> types.EmbeddedResource:
+def _embedded_widget_resource(widget: ToDoWidget) -> types.EmbeddedResource:
     return types.EmbeddedResource(
         type="resource",
         resource=types.TextResourceContents(
@@ -198,7 +198,7 @@ async def _call_tool_request(req: types.CallToolRequest) -> types.ServerResult:
 
     arguments = req.params.arguments or {}
     try:
-        payload = DXBMapInput.model_validate(arguments)
+        payload = TodoInput.model_validate(arguments)
     except ValidationError as exc:
         return types.ServerResult(
             types.CallToolResult(
@@ -212,7 +212,7 @@ async def _call_tool_request(req: types.CallToolRequest) -> types.ServerResult:
             )
         )
 
-    options = payload.dxbMap_options
+    options = payload.todo_options
     widget_resource = _embedded_widget_resource(widget)
     meta: Dict[str, Any] = {
         "openai.com/widget": widget_resource.model_dump(mode="json"),
@@ -231,7 +231,7 @@ async def _call_tool_request(req: types.CallToolRequest) -> types.ServerResult:
                     text=widget.response_text,
                 )
             ],
-            structuredContent={"dxbmapOptions": options},
+            structuredContent={"pizzaTopping": options},
             _meta=meta,
         )
     )
