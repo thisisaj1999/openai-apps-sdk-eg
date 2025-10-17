@@ -269,7 +269,7 @@ export function FormWidget({ onSubmit, isLoading = false }: FormWidgetProps) {
                     <FormLabel>Property Type</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl className="w-full">
-                        <SelectTrigger>
+                        <SelectTrigger className="border border-input bg-background hover:bg-accent hover:text-accent-foreground">
                           <SelectValue placeholder="Select Sale or Rent" />
                         </SelectTrigger>
                       </FormControl>
