@@ -207,6 +207,11 @@ export default defineConfig(({}) => ({
     react(),
     multiEntryDevEndpoints({ entries: inputs }),
   ],
+  resolve: {
+    alias: {
+      "@": path.resolve("src"),
+    },
+  },
   cacheDir: "node_modules/.vite-react",
   server: {
     port: 4444,

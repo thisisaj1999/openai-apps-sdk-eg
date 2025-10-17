@@ -18,6 +18,7 @@ const targets: string[] = [
   "listings",
   "map",
   "transactions",
+  "table",
 ];
 const builtNames: string[] = [];
 
@@ -97,6 +98,11 @@ for (const file of entries) {
         },
       },
     ],
+    resolve: {
+      alias: {
+        "@": path.resolve("src"),
+      },
+    },
     esbuild: {
       jsx: "automatic",
       jsxImportSource: "react",
