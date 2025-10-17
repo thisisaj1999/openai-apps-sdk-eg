@@ -384,7 +384,7 @@ export function FormWidget({ onSubmit, isLoading = false }: FormWidgetProps) {
           </div>
 
           {/* Submit Button */}
-          <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+          <Button type="submit" className="cursor-pointer w-full" size="lg" disabled={isLoading}>
             <Search className="mr-2 h-4 w-4" />
             {isLoading ? "Searching..." : "Search Properties"}
           </Button>
