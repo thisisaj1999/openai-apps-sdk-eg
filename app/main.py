@@ -19,7 +19,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 
 @dataclass(frozen=True)
-class DXBMapWidget:
+class DXBInteractWidgets:
     identifier: str
     title: str
     template_uri: str
@@ -29,19 +29,58 @@ class DXBMapWidget:
     response_text: str
 
 
-widgets: List[DXBMapWidget] = [
-    DXBMapWidget(
-        identifier="DXBMap-widget",
-        title="Show DXB Investment Map",
-        template_uri="ui://widget/dxb.html",
+widgets: List[DXBInteractWidgets] = [
+    DXBInteractWidgets(
+        identifier="DXB Table",
+        title="Show table",
+        template_uri="ui://widget/table.html",
+        invoking="Fetch table data",
+        invoked="Here you go",
+        html=(
+            "<div id=\"table-root\"></div>\n"
+            "<link rel=\"stylesheet\" href=\"http://localhost:4444/table-2d2b.css\">"
+            "<script type=\"module\" src=\"http://localhost:4444/table-2d2b.js\"></script>"
+        ),
+        response_text="Rendered the table!",
+    ),
+    DXBInteractWidgets(
+        identifier="DXB Listings",
+        title="Show listing",
+        template_uri="ui://widget/listings.html",
+        invoking="Fetch listing data",
+        invoked="Here you go",
+        html=(
+            "<div id=\"listings-root\"></div>\n"
+            "<link rel=\"stylesheet\" href=\"http://localhost:4444/listings-2d2b.css\">"
+            "<script type=\"module\" src=\"http://localhost:4444/listings-2d2b.js\"></script>"
+        ),
+        response_text="Rendered the listing!",
+    ),
+    DXBInteractWidgets(
+        identifier="DXB Map",
+        title="Show map",
+        template_uri="ui://widget/map.html",
         invoking="Fetch map data",
         invoked="Here you go",
         html=(
-            "<div id=\"root\"></div>\n"
-            "<link rel=\"stylesheet\" href=\"https://gist.github.com/thisisaj1999/18115cf4838f09ac7c203bafda30cc0e.js\">\n"
-            "<script type=\"module\" src=\"https://gist.github.com/thisisaj1999/be93454d641126c3dd4f047130b0273b.js\"></script>"
+            "<div id=\"map-root\"></div>\n"
+            "<link rel=\"stylesheet\" href=\"http://localhost:4444/map-2d2b.css\">"
+            "<script type=\"module\" src=\"http://localhost:4444/map-2d2b.js\"></script>"
         ),
         response_text="Rendered the map!",
+    ),
+    DXBInteractWidgets(
+        identifier="DXB Transactions",
+        title="Show transactions",
+        template_uri="ui://widget/transactions.html",
+        invoking="Fetch transactions data",
+        invoked="Here you go",
+        html=(
+            "<div id=\"transactions-root\"></div>\n"
+            "<link rel=\"stylesheet\" href=\"http://localhost:4444/transactions-2d2b.css\">"
+            "<script type=\"module\" src=\"http://localhost:4444/transactions-2d2b.js\"></script>"
+        ),
+        response_text="Rendered the transactions!",
     )
 ]
 
@@ -49,8 +88,8 @@ widgets: List[DXBMapWidget] = [
 MIME_TYPE = "text/html+skybridge"
 
 
-WIDGETS_BY_ID: Dict[str, DXBMapWidget] = {widget.identifier: widget for widget in widgets}
-WIDGETS_BY_URI: Dict[str, DXBMapWidget] = {widget.template_uri: widget for widget in widgets}
+WIDGETS_BY_ID: Dict[str, DXBInteractWidgets] = {widget.identifier: widget for widget in widgets}
+WIDGETS_BY_URI: Dict[str, DXBInteractWidgets] = {widget.template_uri: widget for widget in widgets}
 
 
 class DXBMapInput(BaseModel):
@@ -84,11 +123,11 @@ TOOL_INPUT_SCHEMA: Dict[str, Any] = {
 }
 
 
-def _resource_description(widget: DXBMapWidget) -> str:
+def _resource_description(widget: DXBInteractWidgets) -> str:
     return f"{widget.title} widget markup"
 
 
-def _tool_meta(widget: DXBMapWidget) -> Dict[str, Any]:
+def _tool_meta(widget: DXBInteractWidgets) -> Dict[str, Any]:
     return {
         "openai/outputTemplate": widget.template_uri,
         "openai/toolInvocation/invoking": widget.invoking,
@@ -103,7 +142,7 @@ def _tool_meta(widget: DXBMapWidget) -> Dict[str, Any]:
     }
 
 
-def _embedded_widget_resource(widget: DXBMapWidget) -> types.EmbeddedResource:
+def _embedded_widget_resource(widget: DXBInteractWidgets) -> types.EmbeddedResource:
     return types.EmbeddedResource(
         type="resource",
         resource=types.TextResourceContents(
