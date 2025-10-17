@@ -388,6 +388,13 @@ export function FormWidget({ onSubmit, isLoading = false }: FormWidgetProps) {
             <Search className="mr-2 h-4 w-4" />
             {isLoading ? "Searching..." : "Search Properties"}
           </Button>
+
+          {/* Info Section */}
+          <div className="pt-2 border-t border-border/50">
+            <div className="text-sm text-muted-foreground space-y-1">
+              <p className="text-center">Powered by <a href="https://www.dxbinteract.com" target="_blank" className="text-blue-400 font-semibold" rel="noopener noreferrer">DXBInteract</a></p>
+            </div>
+          </div>
         </form>
       </Form>
     </div>

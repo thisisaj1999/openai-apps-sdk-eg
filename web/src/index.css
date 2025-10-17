@@ -157,6 +157,7 @@
   }
   body {
     @apply bg-background text-foreground;
+    background-color: transparent;
   }
   [data-slot="calendar"] {
     border-radius: inherit;
