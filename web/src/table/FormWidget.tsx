@@ -193,7 +193,7 @@ export function FormWidget({ onSubmit, isLoading = false }: FormWidgetProps) {
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-full h-screen max-w-none max-h-[300px] p-0" align="start" sideOffset={4} style={{ width: 'var(--radix-popover-trigger-width)' }}>
+                      <PopoverContent className="w-full h-screen max-w-none max-h-[300px] p-0" align="start" side="bottom" sideOffset={4} style={{ width: 'var(--radix-popover-trigger-width)' }}>
                         <Command>
                           <CommandInput 
                             placeholder="Search locations..." 
@@ -312,7 +312,7 @@ export function FormWidget({ onSubmit, isLoading = false }: FormWidgetProps) {
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+                    <PopoverContent className="w-auto p-0" align="center" side="bottom" avoidCollisions={false} sideOffset={4}>
                       <Calendar
                         mode="single"
                         selected={field.value}
@@ -357,7 +357,7 @@ export function FormWidget({ onSubmit, isLoading = false }: FormWidgetProps) {
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+                    <PopoverContent className="w-auto p-0" align="center" side="bottom" avoidCollisions={false} sideOffset={4}>
                       <Calendar
                         mode="single"
                         selected={field.value}
