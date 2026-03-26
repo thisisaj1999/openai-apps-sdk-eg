@@ -1,4 +1,4 @@
-import { TransactionWidget } from "./components/TransactionWidget"
+import { TransactionWidget } from "./components/Table/TransactionWidget"
 
 const App = () => {
   return (
